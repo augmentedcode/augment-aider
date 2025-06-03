@@ -1565,6 +1565,23 @@ class Coder:
                 return
 
             try:
+                # Handle MCP tool calls if present
+                if self.partial_response_function_call and hasattr(self.main_model, 'mcp_tools_integration') and self.main_model.mcp_tools_integration:
+                    tool_result = self.handle_mcp_tool_call()
+                    if tool_result:
+                        # Add tool result to conversation and continue
+                        self.cur_messages += [
+                            dict(role="assistant", content="", tool_calls=[{
+                                "id": "mcp_tool_call",
+                                "type": "function",
+                                "function": self.partial_response_function_call
+                            }]),
+                            dict(role="tool", tool_call_id="mcp_tool_call", content=tool_result)
+                        ]
+                        # Clear the function call so normal processing continues
+                        self.partial_response_function_call = {}
+                        return
+
                 if self.reply_completed():
                     return
             except KeyboardInterrupt:
@@ -1619,6 +1636,42 @@ class Coder:
                 if ok:
                     self.reflected_message = test_errors
                     return
+
+    def handle_mcp_tool_call(self):
+        """Handle MCP tool calls from the LLM."""
+        if not self.partial_response_function_call:
+            return None
+
+        try:
+            function_name = self.partial_response_function_call.get("name")
+            arguments_str = self.partial_response_function_call.get("arguments", "{}")
+
+            if not function_name:
+                return "Error: No function name provided"
+
+            # Parse arguments
+            try:
+                arguments = json.loads(arguments_str)
+            except json.JSONDecodeError as e:
+                return f"Error: Invalid JSON arguments: {e}"
+
+            # Show user what tool is being called
+            self.io.tool_output(f"Calling MCP tool: {function_name}")
+            if arguments:
+                self.io.tool_output(f"Arguments: {json.dumps(arguments, indent=2)}")
+
+            # Call the MCP tool
+            result = self.main_model.mcp_tools_integration.call_mcp_tool(function_name, arguments)
+
+            # Show the result to the user
+            self.io.tool_output(f"Tool result: {result}")
+
+            return result
+
+        except Exception as e:
+            error_msg = f"Error handling MCP tool call: {str(e)}"
+            self.io.tool_error(error_msg)
+            return error_msg
 
     def reply_completed(self):
         pass

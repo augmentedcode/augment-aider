@@ -36,6 +36,7 @@ from aider.repo import ANY_GIT_ERROR, GitRepo
 from aider.report import report_uncaught_exceptions
 from aider.versioncheck import check_version, install_from_main_branch, install_upgrade
 from aider.watch import FileWatcher
+from aider.mcp_server import McpServerManager
 
 from .dump import dump  # noqa: F401
 
@@ -820,6 +821,7 @@ def main(argv=None, input=None, output=None, force_git_root=None, return_coder=F
         editor_model=args.editor_model,
         editor_edit_format=args.editor_edit_format,
         verbose=args.verbose,
+        mcp_server=args.mcp_server,  # Pass MCP server argument
     )
 
     # Check if deprecated remove_reasoning is set
@@ -962,6 +964,10 @@ def main(argv=None, input=None, output=None, force_git_root=None, return_coder=F
 
     # Track auto-commits configuration
     analytics.event("auto_commits", enabled=bool(args.auto_commits))
+
+    # Initialize MCP server if needed
+    if args.mcp_server and hasattr(main_model, 'initialize_mcp_server'):
+        main_model.initialize_mcp_server(io)
 
     try:
         coder = Coder.create(
@@ -1171,6 +1177,10 @@ def main(argv=None, input=None, output=None, force_git_root=None, return_coder=F
 
             if switch.kwargs.get("show_announcements") is not False:
                 coder.show_announcements()
+    finally:
+        # Clean up MCP servers when exiting
+        if main_model and hasattr(main_model, 'cleanup'):
+            main_model.cleanup()
 
 
 def is_first_run_of_new_version(io, verbose=False):
