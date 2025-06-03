@@ -1566,17 +1566,27 @@ class Coder:
 
             try:
                 # Handle MCP tool calls if present
-                if self.partial_response_function_call and hasattr(self.main_model, 'mcp_tools_integration') and self.main_model.mcp_tools_integration:
+                if (
+                    self.partial_response_function_call
+                    and hasattr(self.main_model, "mcp_tools_integration")
+                    and self.main_model.mcp_tools_integration
+                ):
                     tool_result = self.handle_mcp_tool_call()
                     if tool_result:
                         # Add tool result to conversation and continue
                         self.cur_messages += [
-                            dict(role="assistant", content="", tool_calls=[{
-                                "id": "mcp_tool_call",
-                                "type": "function",
-                                "function": self.partial_response_function_call
-                            }]),
-                            dict(role="tool", tool_call_id="mcp_tool_call", content=tool_result)
+                            dict(
+                                role="assistant",
+                                content="",
+                                tool_calls=[
+                                    {
+                                        "id": "mcp_tool_call",
+                                        "type": "function",
+                                        "function": self.partial_response_function_call,
+                                    }
+                                ],
+                            ),
+                            dict(role="tool", tool_call_id="mcp_tool_call", content=tool_result),
                         ]
                         # Clear the function call so normal processing continues
                         self.partial_response_function_call = {}

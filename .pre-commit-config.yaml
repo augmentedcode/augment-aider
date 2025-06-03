@@ -21,3 +21,12 @@ repos:
         args: ["--skip", "aider/website/docs/languages.md"]
         additional_dependencies:
           - tomli
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest
+        entry: pytest
+        language: system
+        types: [python]
+        pass_filenames: false
+        always_run: true

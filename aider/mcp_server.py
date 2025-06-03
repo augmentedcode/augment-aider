@@ -4,7 +4,8 @@ import subprocess
 import threading
 import time
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
+
 
 class McpClient:
     """Handles MCP protocol communication with a single server."""
@@ -69,17 +70,15 @@ class McpClient:
                 # Refresh tools list
                 self._refresh_tools()
 
-    def _send_request(self, method: str, params: Optional[Dict] = None, timeout: float = 30.0) -> Dict[str, Any]:
+    def _send_request(
+        self, method: str, params: Optional[Dict] = None, timeout: float = 30.0
+    ) -> Dict[str, Any]:
         """Send a request and wait for response."""
         with self._lock:
             self.request_id += 1
             request_id = self.request_id
 
-        request = {
-            "jsonrpc": "2.0",
-            "id": request_id,
-            "method": method
-        }
+        request = {"jsonrpc": "2.0", "id": request_id, "method": method}
         if params:
             request["params"] = params
 
@@ -116,10 +115,7 @@ class McpClient:
 
     def _send_notification(self, method: str, params: Optional[Dict] = None):
         """Send a notification (no response expected)."""
-        notification = {
-            "jsonrpc": "2.0",
-            "method": method
-        }
+        notification = {"jsonrpc": "2.0", "method": method}
         if params:
             notification["params"] = params
 
@@ -133,14 +129,8 @@ class McpClient:
             # Send initialize request
             init_params = {
                 "protocolVersion": self.protocol_version,
-                "capabilities": {
-                    "roots": {"listChanged": True},
-                    "sampling": {}
-                },
-                "clientInfo": {
-                    "name": "aider",
-                    "version": "0.1.0"
-                }
+                "capabilities": {"roots": {"listChanged": True}, "sampling": {}},
+                "clientInfo": {"name": "aider", "version": "0.1.0"},
             }
 
             result = self._send_request("initialize", init_params)
@@ -157,7 +147,9 @@ class McpClient:
 
             self.initialized = True
             if self.io:
-                self.io.tool_output(f"MCP server initialized: {self.server_info.get('name', 'Unknown')}")
+                self.io.tool_output(
+                    f"MCP server initialized: {self.server_info.get('name', 'Unknown')}"
+                )
 
             return True
 
@@ -191,10 +183,7 @@ class McpClient:
         if not self.initialized:
             raise Exception("MCP client not initialized")
 
-        params = {
-            "name": name,
-            "arguments": arguments
-        }
+        params = {"name": name, "arguments": arguments}
 
         result = self._send_request("tools/call", params)
         return result
@@ -221,7 +210,7 @@ class McpServerManager:
         self.servers = {}
         self.active_processes = {}
         self.mcp_clients = {}
-        
+
     def start_server(self, server_name: str, config: Dict) -> bool:
         """
         Start an MCP server based on configuration.
@@ -242,7 +231,9 @@ class McpServerManager:
         env_vars = config.get("env", {})
 
         if not command:
-            self.io.tool_error(f"Invalid MCP server configuration for '{server_name}': missing command")
+            self.io.tool_error(
+                f"Invalid MCP server configuration for '{server_name}': missing command"
+            )
             return False
 
         # Prepare environment variables
@@ -258,7 +249,7 @@ class McpServerManager:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
-                bufsize=1
+                bufsize=1,
             )
 
             self.active_processes[server_name] = process
@@ -278,7 +269,7 @@ class McpServerManager:
         except Exception as e:
             self.io.tool_error(f"Failed to start MCP server '{server_name}': {str(e)}")
             return False
-    
+
     def stop_server(self, server_name: str) -> bool:
         """Stop a running MCP server."""
         if server_name not in self.active_processes:
@@ -328,7 +319,9 @@ class McpServerManager:
                 self.io.tool_error(f"Error getting tools from MCP server '{server_name}': {str(e)}")
         return all_tools
 
-    def call_tool(self, tool_name: str, arguments: Dict[str, Any], server_name: Optional[str] = None) -> Dict[str, Any]:
+    def call_tool(
+        self, tool_name: str, arguments: Dict[str, Any], server_name: Optional[str] = None
+    ) -> Dict[str, Any]:
         """Call a tool on an MCP server."""
         if server_name:
             # Call tool on specific server
@@ -346,7 +339,7 @@ class McpServerManager:
     def load_config_from_file(self, config_path: Path) -> Dict:
         """Load MCP server configuration from a file."""
         try:
-            with open(config_path, 'r') as f:
+            with open(config_path, "r") as f:
                 config = json.load(f)
                 return config.get("mcpServers", {})
         except Exception as e:
