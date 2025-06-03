@@ -10,7 +10,7 @@ import time
 from dataclasses import dataclass, fields
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Union, Any
 
 import json5
 import yaml
@@ -22,6 +22,7 @@ from aider.llm import litellm
 from aider.openrouter import OpenRouterModelManager
 from aider.sendchat import ensure_alternating_roles, sanity_check_messages
 from aider.utils import check_pip_install_extra
+from aider.mcp_server import McpServerManager
 
 RETRY_TIMEOUT = 60
 
@@ -102,7 +103,6 @@ MODEL_ALIASES = {
     "grok3": "xai/grok-3-beta",
     "optimus": "openrouter/openrouter/optimus-alpha",
 }
-# Model metadata loaded from resources and user's files.
 
 
 @dataclass
@@ -129,6 +129,37 @@ class ModelSettings:
     remove_reasoning: Optional[str] = None  # Deprecated alias for reasoning_tag
     system_prompt_prefix: Optional[str] = None
     accepts_settings: Optional[list] = None
+    mcp_server: Optional[str] = None
+    mcp_server_manager: Optional[McpServerManager] = None
+    mcp_tools_integration: Optional[Any] = None
+
+    def initialize_mcp_server(self, io):
+        """Initialize MCP server if specified in the model configuration."""
+        if self.mcp_server and not self.mcp_server_manager:
+            from aider.mcp_server import McpServerManager
+            from aider.mcp_tools import McpToolsIntegration
+
+            self.mcp_server_manager = McpServerManager(io)
+            # Load MCP server configuration
+            config_path = Path.home() / ".aider" / "config.json"
+            if config_path.exists():
+                server_configs = self.mcp_server_manager.load_config_from_file(config_path)
+                if self.mcp_server in server_configs:
+                    if self.mcp_server_manager.start_server(self.mcp_server, server_configs[self.mcp_server]):
+                        # Initialize MCP tools integration
+                        self.mcp_tools_integration = McpToolsIntegration(self.mcp_server_manager, io)
+                        io.tool_output(f"MCP server '{self.mcp_server}' ready for use")
+                    else:
+                        io.tool_error(f"Failed to start MCP server '{self.mcp_server}'")
+                else:
+                    io.tool_error(f"MCP server '{self.mcp_server}' not found in configuration")
+            else:
+                io.tool_error("MCP server configuration file not found")
+                
+    def cleanup(self):
+        """Clean up resources when model is no longer needed."""
+        if self.mcp_server_manager:
+            self.mcp_server_manager.stop_all_servers()
 
 
 # Load model settings from package resource
@@ -309,13 +340,14 @@ model_info_manager = ModelInfoManager()
 
 class Model(ModelSettings):
     def __init__(
-        self, model, weak_model=None, editor_model=None, editor_edit_format=None, verbose=False
+        self, model, weak_model=None, editor_model=None, editor_edit_format=None, verbose=False, mcp_server=None
     ):
         # Map any alias to its canonical name
         model = MODEL_ALIASES.get(model, model)
 
         self.name = model
         self.verbose = verbose
+        self.mcp_server = mcp_server
 
         self.max_chat_history_tokens = 1024
         self.weak_model = None
@@ -934,6 +966,11 @@ class Model(ModelSettings):
         if self.is_deepseek_r1():
             messages = ensure_alternating_roles(messages)
 
+        # Integrate MCP tools if available
+        if hasattr(self, 'mcp_tools_integration') and self.mcp_tools_integration:
+            from aider.mcp_tools import add_mcp_tools_to_messages
+            messages = add_mcp_tools_to_messages(messages, self.mcp_tools_integration)
+
         kwargs = dict(
             model=self.name,
             stream=stream,
@@ -948,10 +985,18 @@ class Model(ModelSettings):
 
             kwargs["temperature"] = temperature
 
+        # Handle MCP tools integration
         if functions is not None:
             function = functions[0]
             kwargs["tools"] = [dict(type="function", function=function)]
             kwargs["tool_choice"] = {"type": "function", "function": {"name": function["name"]}}
+        elif hasattr(self, 'mcp_tools_integration') and self.mcp_tools_integration and self.mcp_tools_integration.has_tools():
+            # Add MCP tools if no specific functions are provided
+            mcp_tools = self.mcp_tools_integration.get_tools_for_llm()
+            if mcp_tools:
+                kwargs["tools"] = mcp_tools
+                kwargs["tool_choice"] = "auto"  # Let the model decide when to use tools
+
         if self.extra_params:
             kwargs.update(self.extra_params)
         if self.is_ollama() and "num_ctx" not in kwargs:

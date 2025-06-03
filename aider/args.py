@@ -32,7 +32,7 @@ def default_env_file(git_root):
     return os.path.join(git_root, ".env") if git_root else ".env"
 
 
-def get_parser(default_config_files, git_root):
+def get_parser(default_config_files=None, git_root=None):
     parser = configargparse.ArgumentParser(
         description="aider is AI pair programming in your terminal",
         add_config_file_help=True,
@@ -846,6 +846,14 @@ def get_parser(default_config_files, git_root):
     group = parser.add_argument_group("Deprecated model settings")
     # Add deprecated model shortcut arguments
     add_deprecated_model_args(parser, group)
+
+    # Add MCP server argument to the model settings group
+    model_settings_group = parser.add_argument_group("MCP settings")
+    model_settings_group.add_argument(
+        "--mcp-server",
+        help="Use a specific MCP server from your configuration",
+        metavar="SERVER_NAME",
+    )
 
     return parser
 
