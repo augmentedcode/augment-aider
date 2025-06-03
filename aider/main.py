@@ -30,13 +30,13 @@ from aider.format_settings import format_settings, scrub_sensitive_info
 from aider.history import ChatSummary
 from aider.io import InputOutput
 from aider.llm import litellm  # noqa: F401; properly init litellm on launch
+from aider.mcp_server import McpServerManager
 from aider.models import ModelSettings
 from aider.onboarding import offer_openrouter_oauth, select_default_model
 from aider.repo import ANY_GIT_ERROR, GitRepo
 from aider.report import report_uncaught_exceptions
 from aider.versioncheck import check_version, install_from_main_branch, install_upgrade
 from aider.watch import FileWatcher
-from aider.mcp_server import McpServerManager
 
 from .dump import dump  # noqa: F401
 
@@ -966,7 +966,7 @@ def main(argv=None, input=None, output=None, force_git_root=None, return_coder=F
     analytics.event("auto_commits", enabled=bool(args.auto_commits))
 
     # Initialize MCP server if needed
-    if args.mcp_server and hasattr(main_model, 'initialize_mcp_server'):
+    if args.mcp_server and hasattr(main_model, "initialize_mcp_server"):
         main_model.initialize_mcp_server(io)
 
     try:
@@ -1155,31 +1155,32 @@ def main(argv=None, input=None, output=None, force_git_root=None, return_coder=F
 
     analytics.event("cli session", main_model=main_model, edit_format=main_model.edit_format)
 
-    while True:
-        try:
-            coder.ok_to_warm_cache = bool(args.cache_keepalive_pings)
-            coder.run()
-            analytics.event("exit", reason="Completed main CLI coder.run")
-            return
-        except SwitchCoder as switch:
-            coder.ok_to_warm_cache = False
+    try:
+        while True:
+            try:
+                coder.ok_to_warm_cache = bool(args.cache_keepalive_pings)
+                coder.run()
+                analytics.event("exit", reason="Completed main CLI coder.run")
+                return
+            except SwitchCoder as switch:
+                coder.ok_to_warm_cache = False
 
-            # Set the placeholder if provided
-            if hasattr(switch, "placeholder") and switch.placeholder is not None:
-                io.placeholder = switch.placeholder
+                # Set the placeholder if provided
+                if hasattr(switch, "placeholder") and switch.placeholder is not None:
+                    io.placeholder = switch.placeholder
 
-            kwargs = dict(io=io, from_coder=coder)
-            kwargs.update(switch.kwargs)
-            if "show_announcements" in kwargs:
-                del kwargs["show_announcements"]
+                kwargs = dict(io=io, from_coder=coder)
+                kwargs.update(switch.kwargs)
+                if "show_announcements" in kwargs:
+                    del kwargs["show_announcements"]
 
-            coder = Coder.create(**kwargs)
+                coder = Coder.create(**kwargs)
 
-            if switch.kwargs.get("show_announcements") is not False:
-                coder.show_announcements()
+                if switch.kwargs.get("show_announcements") is not False:
+                    coder.show_announcements()
     finally:
         # Clean up MCP servers when exiting
-        if main_model and hasattr(main_model, 'cleanup'):
+        if main_model and hasattr(main_model, "cleanup"):
             main_model.cleanup()
 
 

@@ -7,10 +7,10 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import MagicMock, Mock, patch
 
 from aider.io import InputOutput
-from aider.mcp_server import McpServerManager, McpClient
+from aider.mcp_server import McpClient, McpServerManager
 from aider.mcp_tools import McpToolsIntegration
 
 
@@ -21,13 +21,13 @@ class TestMcpServerManager(unittest.TestCase):
 
     def test_load_config_from_file(self):
         """Test loading MCP server configuration from file."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             config = {
                 "mcpServers": {
                     "test_server": {
                         "command": "echo",
                         "args": ["hello"],
-                        "env": {"TEST_VAR": "test_value"}
+                        "env": {"TEST_VAR": "test_value"},
                     }
                 }
             }
@@ -52,7 +52,7 @@ class TestMcpClient(unittest.TestCase):
     def setUp(self):
         self.io = InputOutput(pretty=False, fancy_input=False, yes=True)
 
-    @patch('subprocess.Popen')
+    @patch("subprocess.Popen")
     def test_mcp_client_initialization(self, mock_popen):
         """Test MCP client initialization."""
         # Mock process
@@ -66,7 +66,7 @@ class TestMcpClient(unittest.TestCase):
         self.assertEqual(client.protocol_version, "2025-03-26")
         self.assertFalse(client.initialized)
 
-    @patch('subprocess.Popen')
+    @patch("subprocess.Popen")
     def test_mcp_client_send_request(self, mock_popen):
         """Test sending requests to MCP server."""
         # Mock process
@@ -77,16 +77,16 @@ class TestMcpClient(unittest.TestCase):
         mock_popen.return_value = mock_process
 
         client = McpClient(mock_process, self.io)
-        
+
         # Mock a successful response
         response = {"result": {"test": "data"}}
-        with patch.object(client, '_handle_message') as mock_handle:
+        with patch.object(client, "_handle_message") as mock_handle:
             # Simulate response handling
             future = {"done": True, "result": response["result"], "error": None}
             client.pending_requests[1] = future
-            
+
             # This would normally timeout, but we'll mock the response
-            with patch('time.time', side_effect=[0, 0, 0, 1]):  # Simulate immediate response
+            with patch("time.time", side_effect=[0, 0, 0, 1]):  # Simulate immediate response
                 try:
                     result = client._send_request("test_method", {"test": "param"}, timeout=0.1)
                     # This will timeout in the test, which is expected
@@ -107,16 +107,14 @@ class TestMcpToolsIntegration(unittest.TestCase):
             "description": "A test tool",
             "inputSchema": {
                 "type": "object",
-                "properties": {
-                    "param1": {"type": "string"}
-                },
-                "required": ["param1"]
+                "properties": {"param1": {"type": "string"}},
+                "required": ["param1"],
             },
-            "_mcp_server": "test_server"
+            "_mcp_server": "test_server",
         }
 
         llm_tool = self.integration._convert_mcp_tool_to_llm_format(mcp_tool)
-        
+
         self.assertEqual(llm_tool["type"], "function")
         self.assertEqual(llm_tool["function"]["name"], "test_tool")
         self.assertEqual(llm_tool["function"]["description"], "A test tool")
@@ -124,24 +122,14 @@ class TestMcpToolsIntegration(unittest.TestCase):
 
     def test_format_tool_result_text(self):
         """Test formatting tool result with text content."""
-        result = {
-            "content": [
-                {"type": "text", "text": "Hello, world!"}
-            ],
-            "isError": False
-        }
+        result = {"content": [{"type": "text", "text": "Hello, world!"}], "isError": False}
 
         formatted = self.integration._format_tool_result(result)
         self.assertEqual(formatted, "Hello, world!")
 
     def test_format_tool_result_error(self):
         """Test formatting tool result with error."""
-        result = {
-            "content": [
-                {"type": "text", "text": "Something went wrong"}
-            ],
-            "isError": True
-        }
+        result = {"content": [{"type": "text", "text": "Something went wrong"}], "isError": True}
 
         formatted = self.integration._format_tool_result(result)
         self.assertEqual(formatted, "Tool execution error: Something went wrong")
@@ -153,13 +141,19 @@ class TestMcpToolsIntegration(unittest.TestCase):
                 {"type": "text", "text": "Text content"},
                 {"type": "image", "mimeType": "image/png"},
                 {"type": "audio", "mimeType": "audio/wav"},
-                {"type": "resource", "resource": {"uri": "file://test.txt", "text": "Resource content"}}
+                {
+                    "type": "resource",
+                    "resource": {"uri": "file://test.txt", "text": "Resource content"},
+                },
             ],
-            "isError": False
+            "isError": False,
         }
 
         formatted = self.integration._format_tool_result(result)
-        expected = "Text content\n[Image: image/png]\n[Audio: audio/wav]\n[Resource: file://test.txt]\nResource content"
+        expected = (
+            "Text content\n[Image: image/png]\n[Audio: audio/wav]\n[Resource:"
+            " file://test.txt]\nResource content"
+        )
         self.assertEqual(formatted, expected)
 
     def test_call_mcp_tool_no_manager(self):
@@ -174,5 +168,5 @@ class TestMcpToolsIntegration(unittest.TestCase):
         self.assertFalse(integration.has_tools())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

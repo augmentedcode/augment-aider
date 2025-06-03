@@ -10,7 +10,7 @@ import time
 from dataclasses import dataclass, fields
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Union, Any
+from typing import Any, Optional, Union
 
 import json5
 import yaml
@@ -19,10 +19,10 @@ from PIL import Image
 from aider import __version__
 from aider.dump import dump  # noqa: F401
 from aider.llm import litellm
+from aider.mcp_server import McpServerManager
 from aider.openrouter import OpenRouterModelManager
 from aider.sendchat import ensure_alternating_roles, sanity_check_messages
 from aider.utils import check_pip_install_extra
-from aider.mcp_server import McpServerManager
 
 RETRY_TIMEOUT = 60
 
@@ -145,9 +145,13 @@ class ModelSettings:
             if config_path.exists():
                 server_configs = self.mcp_server_manager.load_config_from_file(config_path)
                 if self.mcp_server in server_configs:
-                    if self.mcp_server_manager.start_server(self.mcp_server, server_configs[self.mcp_server]):
+                    if self.mcp_server_manager.start_server(
+                        self.mcp_server, server_configs[self.mcp_server]
+                    ):
                         # Initialize MCP tools integration
-                        self.mcp_tools_integration = McpToolsIntegration(self.mcp_server_manager, io)
+                        self.mcp_tools_integration = McpToolsIntegration(
+                            self.mcp_server_manager, io
+                        )
                         io.tool_output(f"MCP server '{self.mcp_server}' ready for use")
                     else:
                         io.tool_error(f"Failed to start MCP server '{self.mcp_server}'")
@@ -155,7 +159,7 @@ class ModelSettings:
                     io.tool_error(f"MCP server '{self.mcp_server}' not found in configuration")
             else:
                 io.tool_error("MCP server configuration file not found")
-                
+
     def cleanup(self):
         """Clean up resources when model is no longer needed."""
         if self.mcp_server_manager:
@@ -340,7 +344,13 @@ model_info_manager = ModelInfoManager()
 
 class Model(ModelSettings):
     def __init__(
-        self, model, weak_model=None, editor_model=None, editor_edit_format=None, verbose=False, mcp_server=None
+        self,
+        model,
+        weak_model=None,
+        editor_model=None,
+        editor_edit_format=None,
+        verbose=False,
+        mcp_server=None,
     ):
         # Map any alias to its canonical name
         model = MODEL_ALIASES.get(model, model)
@@ -922,6 +932,7 @@ class Model(ModelSettings):
 
             class GitHubCopilotTokenError(Exception):
                 """Custom exception for GitHub Copilot token-related errors."""
+
                 pass
 
             # Validate GitHub Copilot token exists
@@ -967,8 +978,9 @@ class Model(ModelSettings):
             messages = ensure_alternating_roles(messages)
 
         # Integrate MCP tools if available
-        if hasattr(self, 'mcp_tools_integration') and self.mcp_tools_integration:
+        if hasattr(self, "mcp_tools_integration") and self.mcp_tools_integration:
             from aider.mcp_tools import add_mcp_tools_to_messages
+
             messages = add_mcp_tools_to_messages(messages, self.mcp_tools_integration)
 
         kwargs = dict(
@@ -990,7 +1002,11 @@ class Model(ModelSettings):
             function = functions[0]
             kwargs["tools"] = [dict(type="function", function=function)]
             kwargs["tool_choice"] = {"type": "function", "function": {"name": function["name"]}}
-        elif hasattr(self, 'mcp_tools_integration') and self.mcp_tools_integration and self.mcp_tools_integration.has_tools():
+        elif (
+            hasattr(self, "mcp_tools_integration")
+            and self.mcp_tools_integration
+            and self.mcp_tools_integration.has_tools()
+        ):
             # Add MCP tools if no specific functions are provided
             mcp_tools = self.mcp_tools_integration.get_tools_for_llm()
             if mcp_tools:
