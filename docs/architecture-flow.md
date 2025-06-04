@@ -135,7 +135,7 @@ sequenceDiagram
                     alt Edit Format Error
                         Coder->>IO: tool_error()
                         Coder->>Coder: set reflected_message
-                        continue
+                        Note over Coder: Continue to reflection
                     else Valid Edits
                         Coder->>Coder: apply_edits_dry_run()
                         Coder->>Coder: prepare_to_edit()
@@ -164,7 +164,7 @@ sequenceDiagram
                                 
                                 alt User Confirms
                                     Coder->>Coder: set reflected_message
-                                    continue
+                                    Note over Coder: Continue to reflection
                                 end
                             end
                         end
@@ -198,7 +198,7 @@ sequenceDiagram
                                 
                                 alt User Confirms
                                     Coder->>Coder: set reflected_message
-                                    continue
+                                    Note over Coder: Continue to reflection
                                 end
                             end
                         end
@@ -207,9 +207,9 @@ sequenceDiagram
                 
                 %% Check for Reflection
                 alt Has Reflected Message
-                    continue
+                    Note over Coder: Continue to next reflection
                 else No Reflection Needed
-                    break
+                    Note over Coder: Break from reflection loop
                 end
             end
         end
@@ -223,7 +223,7 @@ sequenceDiagram
                 Coder->>Main: sys.exit()
             else Single Ctrl+C
                 Coder->>IO: tool_warning("^C again to exit")
-                continue
+                Note over Coder: Continue main loop
             end
         end
         
@@ -231,14 +231,14 @@ sequenceDiagram
         alt Context Window Exceeded
             Coder->>Coder: handle_context_exhausted()
             Coder->>IO: tool_error("Context window exceeded")
-            continue
+            Note over Coder: Continue main loop
         end
         
         %% Coder Switching
         alt Switch Coder Command
             Commands->>Commands: SwitchCoder exception
             Main->>Coder: Coder.create(new_type)
-            continue
+            Note over Main: Continue with new coder
         end
     end
     
@@ -824,7 +824,14 @@ classDiagram
     classDef exceptionClass fill:#ffebee
 
     class Coder baseClass
-    class EditBlockCoder,UnifiedDiffCoder,WholeFileCoder,PatchCoder,ArchitectCoder,AskCoder,HelpCoder,ContextCoder coderClass
+    class EditBlockCoder coderClass
+    class UnifiedDiffCoder coderClass
+    class WholeFileCoder coderClass
+    class PatchCoder coderClass
+    class ArchitectCoder coderClass
+    class AskCoder coderClass
+    class HelpCoder coderClass
+    class ContextCoder coderClass
     class ModelSettings,Model modelClass
     class InputOutput,Commands,GitRepo,Linter,RepoMap,ChatSummary,Analytics utilClass
     class UnknownEditFormat,MissingAPIKeyError,FinishReasonLength exceptionClass
@@ -944,7 +951,7 @@ stateDiagram-v2
         }
 
         LLMError --> SendingToLLM : Retry attempt
-        LLMError --> ProcessingMessage : Fatal error handled
+        LLMError --> [*] : Fatal error handled
 
         state ApplyingEdits {
             [*] --> ParsingEdits : Extract edits from response
@@ -1022,7 +1029,7 @@ stateDiagram-v2
             SummarizingHistory --> [*] : Summary complete
         }
 
-        ContextExhaustedError --> ProcessingMessage : Retry with summary
+        ContextExhaustedError --> [*] : Retry with summary
     }
 
     ProcessingMessage --> Idle : Message complete
@@ -1037,7 +1044,7 @@ stateDiagram-v2
         MaxReflectionsReached --> [*] : Stop reflecting
     }
 
-    ReflectionNeeded --> ProcessingMessage : Start reflection
+    ReflectionNeeded --> Idle : Start reflection
     ReflectionNeeded --> Idle : Max reflections reached
 
     state InterruptedByUser {
