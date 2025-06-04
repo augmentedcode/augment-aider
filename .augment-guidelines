@@ -1,0 +1,19 @@
+### 📝 Git Commit Messages
+- **Use Conventional Commits format** for all commits.
+- **Include a detailed description** in the commit body if necessary.
+- **Limit the subject line to 50 characters** and the body to 72 characters.
+- **Reference issues or PRs** in the commit message (e.g., `Closes #123`) when appropriate.
+- **Include a footer** with any breaking changes or deprecations.
+- **Use the present tense** for the subject line (e.g., "Add feature" instead of "Added feature").
+- **Use the imperative mood** for the subject line (e.g., "Fix bug" instead of "Fixes bug").
+- **Commit changes in logical units**. If a series of changes logically belong together, they should be in a single commit.
+
+### 🧪 Testing & Reliability
+- **Always create Pytest unit tests for new features** (functions, classes, routes, etc).
+- **After updating any logic**, check whether existing unit tests need to be updated. If so, do it.
+- **Tests should live in a `/tests` folder** mirroring the main app structure.
+  - Include at least:
+    - 1 test for expected use
+    - 1 edge case
+    - 1 failure case
+- **Tests run automatically via git pre-commit hooks so be sure to resolve any failed tests. If tests pass, continue.
