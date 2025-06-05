@@ -6,9 +6,13 @@
 AI Pair Programming in Your Terminal
 </h1>
 
+<p align="center">
+<strong>🚀 Enhanced with Commit-Driven Agile Workflow & Specialized AI Agent Roles</strong>
+</p>
 
 <p align="center">
-Aider lets you pair program with LLMs to start a new project or build on your existing codebase. 
+Aider lets you pair program with LLMs to start a new project or build on your existing codebase.
+Now enhanced with specialized AI agents for DevOps, Feature Development, QA, and Documentation.
 </p>
 
 <p align="center">
@@ -37,9 +41,31 @@ src="https://img.shields.io/badge/🔄%20Singularity-79%25-e74c3c?style=flat-squ
 <!--[[[end]]]-->
 </p>
 
-## Architecture Overview
+## 🏗️ Architecture & Workflow
 
+### Architecture Overview
 For a comprehensive understanding of how Aider processes user requests from input to output, see the [Architecture Flow Diagram](docs/architecture-flow.md).
+
+### 🤖 Specialized AI Agent Roles
+This enhanced version of Aider includes specialized AI agent roles for optimal development workflows:
+
+- **🔧 DevOps Agent**: CI/CD pipelines, infrastructure, deployment, containerization, monitoring
+- **⚡ Feature Agent**: Business logic, core functionality, API development, data models
+- **🧪 QA Agent**: Test strategy, test implementation, validation, quality assurance
+- **📚 Documentation Agent**: Technical docs, README files, API documentation, architectural diagrams
+
+### 📋 Commit-Driven Agile Workflow
+- **Linear PMS Integration**: Single master project with labels/tags for features and repositories
+- **Quality Gates**: Pre-commit hooks + GitHub Actions for continuous validation
+- **Velocity Tracking**: Unified view across all features and milestones
+- **Multi-Repository Support**: Seamless feature development spanning multiple codebases
+
+### 🎯 Project Planning
+Use our structured project planning approach by saying **"Let's have a project planning session"** to generate:
+- Comprehensive project artifacts (PLANNING.md, USERSTORIES.md, TASKS.md)
+- Mermaid architecture and task flow diagrams
+- Complete CI/CD pipeline configurations
+- Linear project structure with proper agent assignments
 
 ## Features
 
@@ -104,8 +130,9 @@ Automatically lint and test your code every time aider makes changes. Aider can 
 <a href="https://aider.chat/docs/usage/copypaste.html"><img src="https://aider.chat/assets/icons/content-copy.svg" width="32" height="32" align="left" valign="middle" style="margin-right:10px"></a>
 Work with any LLM via its web chat interface. Aider streamlines copy/pasting code context and edits back and forth with a browser.
 
-## Getting Started
+## 🚀 Getting Started
 
+### Standard Installation
 ```bash
 python -m pip install aider-install
 aider-install
@@ -123,6 +150,35 @@ aider --model sonnet --api-key anthropic=<key>
 aider --model o3-mini --api-key openai=<key>
 ```
 
+### 🎯 Enhanced Agile Workflow
+For project planning and specialized agent workflows:
+
+1. **Start a Planning Session**:
+   ```bash
+   # In your project directory
+   aider --model sonnet
+   > "Let's have a project planning session"
+   ```
+
+2. **Provide Project Details**:
+   - Feature Name
+   - Description & Summary
+   - Functional Requirements
+   - Acceptance Criteria
+   - Proposed Tech Stack
+
+3. **Get Generated Artifacts**:
+   - PLANNING.md (project scope & architecture)
+   - USERSTORIES.md (Linear-ready user stories)
+   - TASKS.md (sequential implementation tasks)
+   - CI/CD pipeline configurations
+   - Mermaid diagrams
+
+4. **Linear Integration**:
+   - Creates issues with proper labels and agent assignments
+   - Tracks velocity across features and repositories
+   - Supports commit-driven development with quality gates
+
 See the [installation instructions](https://aider.chat/docs/install.html) and [usage documentation](https://aider.chat/docs/usage.html) for more details.
 
 ## More Information
@@ -135,6 +191,13 @@ See the [installation instructions](https://aider.chat/docs/install.html) and [u
 - [Configuration Options](https://aider.chat/docs/config.html)
 - [Troubleshooting](https://aider.chat/docs/troubleshooting.html)
 - [FAQ](https://aider.chat/docs/faq.html)
+
+### 🆕 Enhanced Workflow Documentation
+- [Architecture Flow Diagram](docs/architecture-flow.md) - Complete system architecture and data flow
+- [Project Planning Prompt](../augment-agile-flow/PROJECT_PLANNING_PROMPT.md) - Structured planning framework
+- **Specialized Agent Roles**: DevOps, Feature, QA, and Documentation agents
+- **Linear Integration**: Commit-driven Agile project management
+- **Multi-Repository Support**: Feature development across multiple codebases
 
 ### Community & Resources
 - [LLM Leaderboards](https://aider.chat/docs/leaderboards/)
